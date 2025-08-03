@@ -1,0 +1,41 @@
+version: "3.8"
+
+services:
+  searxng:
+    container_name: searxng
+    image: searxng/searxng:latest
+    ports:
+      - "8888:8080"
+    environment:
+      - BASE_URL=https://search.example.com/  # Change this!
+      - INSTANCE_NAME=my-search
+      - SEARXNG_SECRET=98A9376DAWS22123DADH2187AJS55D8C3F  # Change this!
+    volumes:
+      - searxng_config:/etc/searxng
+    restart: unless-stopped
+    networks:
+      - searxng-net
+
+  searxng-api:
+    image: node:18-alpine
+    container_name: searxng-api
+    working_dir: /app
+    command: sh -c "npm init -y && npm install express axios && node server.js"
+    ports:
+      - "3100:3100"
+    environment:
+      - SEARXNG_URL=http://searxng:8080
+    volumes:
+      - ./server.js:/app/server.js:ro
+    depends_on:
+      - searxng
+    restart: unless-stopped
+    networks:
+      - searxng-net
+
+volumes:
+  searxng_config:
+
+networks:
+  searxng-net:
+    driver: bridge
